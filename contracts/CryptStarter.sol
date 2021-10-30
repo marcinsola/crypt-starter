@@ -17,10 +17,8 @@ contract CryptStarter {
         uint256 target;
         uint256 deadline;
         CampaignStatus status;
-        mapping(address => uint256) funders;
+        mapping(address => uint256) supporters;
     }
-
-    mapping(address => uint256) public ownersCampaigns;
 
     event CampaignCreated(
         uint256 index,
@@ -30,7 +28,19 @@ contract CryptStarter {
         uint256 deadline
     );
 
+    event CampaignFunded(uint256 index, address supporter, uint256 amount);
+
     mapping(uint256 => Campaign) public campaigns;
+
+    mapping(address => uint256) public ownersCampaigns;
+
+    modifier campaignExists(uint256 _index) {
+        require(
+            campaigns[_index].owner != address(0),
+            "Campaign with the given index wasn't regitered"
+        );
+        _;
+    }
 
     function createCampaign(
         string calldata _name,
@@ -76,5 +86,14 @@ contract CryptStarter {
             campaign.deadline,
             uint256(campaign.status)
         );
+    }
+
+    function fundCampaign(uint256 _index)
+        public
+        payable
+        campaignExists(_index)
+    {
+        campaigns[_index].supporters[msg.sender] += msg.value;
+        emit CampaignFunded(_index, msg.sender, msg.value);
     }
 }
