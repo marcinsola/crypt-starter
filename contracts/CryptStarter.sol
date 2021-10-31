@@ -2,24 +2,26 @@
 pragma solidity ^0.8.9;
 
 contract CryptStarter {
-    uint256 public currentIndex;
-
+    // Enums
     enum CampaignStatus {
-        Created,
         InProgress,
         Completed,
+        Unsuccessful,
         Withdrawn
     }
 
+    // Structs
     struct Campaign {
         address owner;
         string name;
         uint256 target;
         uint256 deadline;
+        uint256 totalRaised;
         CampaignStatus status;
         mapping(address => uint256) supporters;
     }
 
+    // Events
     event CampaignCreated(
         uint256 index,
         address owner,
@@ -30,10 +32,7 @@ contract CryptStarter {
 
     event CampaignFunded(uint256 index, address supporter, uint256 amount);
 
-    mapping(uint256 => Campaign) public campaigns;
-
-    mapping(address => uint256) public ownersCampaigns;
-
+    // Modifiers
     modifier campaignExists(uint256 _index) {
         require(
             campaigns[_index].owner != address(0),
@@ -41,6 +40,29 @@ contract CryptStarter {
         );
         _;
     }
+
+    modifier isCampaignOwner(uint256 _index) {
+        require(
+            campaigns[_index].owner == msg.sender,
+            "You're not the author of this campaign"
+        );
+        _;
+    }
+
+    modifier readyToWithdraw(uint256 _index) {
+        require(
+            (block.timestamp >= campaigns[_index].deadline) &&
+                (campaigns[_index].target >= campaigns[_index].totalRaised)
+                (campaigns[_index].status = CampaignStatus.Completed)
+        );
+        _;
+    }
+
+    uint256 public currentIndex;
+
+    mapping(uint256 => Campaign) public campaigns;
+
+    mapping(address => uint256) public ownersCampaigns;
 
     function createCampaign(
         string calldata _name,
@@ -52,7 +74,8 @@ contract CryptStarter {
         campaign.name = _name;
         campaign.target = _target;
         campaign.deadline = _deadline;
-        campaign.status = CampaignStatus.Created;
+        campaign.totalRaised = 0;
+        campaign.status = CampaignStatus.InProgress;
 
         emit CampaignCreated(
             currentIndex,
@@ -95,5 +118,15 @@ contract CryptStarter {
     {
         campaigns[_index].supporters[msg.sender] += msg.value;
         emit CampaignFunded(_index, msg.sender, msg.value);
+    }
+
+    function withdrawFromCampaign(uint256 _index)
+        public
+        campaignExists(_index)
+        isCampaignOwner(_index)
+        readyToWithdraw(_index)
+    {
+        // Campaign campaign = campaigns[_index];
+        // campaign.status = CampaignStatus.Withdrawn;
     }
 }
