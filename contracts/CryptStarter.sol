@@ -112,6 +112,10 @@ contract CryptStarter {
         uint256 _target,
         uint256 _deadline
     ) public {
+        require(
+            (block.timestamp + 2592000) < _deadline,
+            "Minimum deadline for a campain is 30 days"
+        );
         Campaign storage campaign = campaigns[currentIndex];
         campaign.owner = address(msg.sender);
         campaign.name = _name;
