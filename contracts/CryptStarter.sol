@@ -32,6 +32,8 @@ contract CryptStarter {
 
     event CampaignFunded(uint256 index, address supporter, uint256 amount);
 
+    event CampaignFundsClaimed(uint256 index, address owner, uint256 amount);
+
     // Modifiers
     modifier campaignExists(uint256 _index) {
         require(
@@ -51,9 +53,10 @@ contract CryptStarter {
 
     modifier readyToWithdraw(uint256 _index) {
         require(
-            (block.timestamp >= campaigns[_index].deadline) &&
-                (campaigns[_index].target >= campaigns[_index].totalRaised)
-                (campaigns[_index].status = CampaignStatus.Completed)
+            ((block.timestamp >= campaigns[_index].deadline) &&
+                (campaigns[_index].target >= campaigns[_index].totalRaised) &&
+                (campaigns[_index].status == CampaignStatus.Completed)),
+                "Funds are not ready to withdraw yet"
         );
         _;
     }
@@ -120,13 +123,15 @@ contract CryptStarter {
         emit CampaignFunded(_index, msg.sender, msg.value);
     }
 
-    function withdrawFromCampaign(uint256 _index)
+    function claimSuccessfulCampaignFunds(uint256 _index)
         public
         campaignExists(_index)
         isCampaignOwner(_index)
         readyToWithdraw(_index)
     {
-        // Campaign campaign = campaigns[_index];
-        // campaign.status = CampaignStatus.Withdrawn;
+        Campaign storage campaign = campaigns[_index];
+        campaign.status = CampaignStatus.Withdrawn;
+        emit CampaignFundsClaimed(_index, msg.sender, campaign.totalRaised);
+        payable(msg.sender).transfer(campaign.totalRaised);
     }
 }
