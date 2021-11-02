@@ -18,7 +18,8 @@ contract CryptStarter {
         uint256 deadline;
         uint256 totalRaised;
         CampaignStatus status;
-        mapping(address => uint256) supporters;
+        mapping(address => uint256) backersAmounts;
+        mapping(address => bool) backersAllowances;
     }
 
     // Events
@@ -30,9 +31,15 @@ contract CryptStarter {
         uint256 deadline
     );
 
-    event CampaignFunded(uint256 index, address supporter, uint256 amount);
+    event CampaignFunded(uint256 index, address backer, uint256 amount);
 
     event CampaignFundsClaimed(uint256 index, address owner, uint256 amount);
+
+    event UnsuccessfulCampaignFundsWithdrawn(
+        uint256 index,
+        address backer,
+        uint256 amount
+    );
 
     // Modifiers
     modifier campaignExists(uint256 _index) {
@@ -119,7 +126,8 @@ contract CryptStarter {
         payable
         campaignExists(_index)
     {
-        campaigns[_index].supporters[msg.sender] += msg.value;
+        Campaign storage campaign = campaigns[_index];
+        campaign.backersAmounts[msg.sender] += msg.value;
         emit CampaignFunded(_index, msg.sender, msg.value);
     }
 
