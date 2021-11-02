@@ -45,7 +45,15 @@ contract CryptStarter {
     modifier campaignExists(uint256 _index) {
         require(
             campaigns[_index].owner != address(0),
-            "Campaign with the given index wasn't regitered"
+            "Campaign with the given index wasn't registered"
+        );
+        _;
+    }
+
+    modifier campaignInProgress(uint256 _index) {
+        require(
+            campaigns[_index].status == CampaignStatus.InProgress,
+            "Campaign is not in progress"
         );
         _;
     }
@@ -54,6 +62,22 @@ contract CryptStarter {
         require(
             campaigns[_index].owner == msg.sender,
             "You're not the author of this campaign"
+        );
+        _;
+    }
+
+    modifier hasFundsInCampaign(uint256 _index) {
+        require(
+            campaigns[_index].backersAmounts[msg.sender] > 0,
+            "You have no funds locked in this campaign"
+        );
+        _;
+    }
+
+    modifier isAllowedToWithdrawFunds(uint256 _index) {
+        require(
+            campaigns[_index].backersAllowances[msg.sender] == true,
+            "You are (no longer) allowed to withdraw funds from this campaign"
         );
         _;
     }
@@ -68,6 +92,15 @@ contract CryptStarter {
         _;
     }
 
+    modifier hasCampaignFailed(uint256 _index) {
+        require(
+            (campaigns[_index].deadline < block.timestamp) &&
+                (campaigns[_index].target > campaigns[_index].totalRaised &&
+                    campaigns[_index].status == CampaignStatus.Unsuccessful),
+            "Campaign is either still in progress or had reached it goal"
+        );
+        _;
+    }
     uint256 public currentIndex;
 
     mapping(uint256 => Campaign) public campaigns;
@@ -75,7 +108,7 @@ contract CryptStarter {
     mapping(address => uint256) public ownersCampaigns;
 
     function createCampaign(
-        string calldata _name,
+        string memory _name,
         uint256 _target,
         uint256 _deadline
     ) public {
