@@ -5,7 +5,7 @@ contract CryptStarter {
     // Enums
     enum CampaignStatus {
         InProgress,
-        Completed,
+        Successful,
         Unsuccessful,
         Withdrawn
     }
@@ -55,8 +55,8 @@ contract CryptStarter {
         require(
             ((block.timestamp >= campaigns[_index].deadline) &&
                 (campaigns[_index].target >= campaigns[_index].totalRaised) &&
-                (campaigns[_index].status == CampaignStatus.Completed)),
-                "Funds are not ready to withdraw yet"
+                (campaigns[_index].status == CampaignStatus.Successful)),
+            "Funds are not ready to withdraw yet"
         );
         _;
     }
