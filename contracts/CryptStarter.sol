@@ -99,28 +99,6 @@ contract CryptStarter {
         currentIndex++;
     }
 
-    function getCampaign(uint256 _index)
-        public
-        view
-        returns (
-            address owner,
-            string memory name,
-            uint256 target,
-            uint256 deadline,
-            uint256 status
-        )
-    {
-        Campaign storage campaign = campaigns[_index];
-
-        return (
-            campaign.owner,
-            campaign.name,
-            campaign.target,
-            campaign.deadline,
-            uint256(campaign.status)
-        );
-    }
-
     function fundCampaign(uint256 _index)
         public
         payable
