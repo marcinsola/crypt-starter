@@ -140,9 +140,13 @@ contract CryptStarter {
         public
         payable
         campaignExists(_index)
+        campaignInProgress(_index)
     {
         Campaign storage campaign = campaigns[_index];
         campaign.backersAmounts[msg.sender] += msg.value;
+        campaign.backersAllowances[msg.sender] = true;
+        campaign.totalRaised = msg.value;
+
         emit CampaignFunded(_index, msg.sender, msg.value);
     }
 
@@ -154,7 +158,24 @@ contract CryptStarter {
     {
         Campaign storage campaign = campaigns[_index];
         campaign.status = CampaignStatus.Withdrawn;
-        emit CampaignFundsClaimed(_index, msg.sender, campaign.totalRaised);
         payable(msg.sender).transfer(campaign.totalRaised);
+        emit CampaignFundsClaimed(_index, msg.sender, campaign.totalRaised);
+    }
+
+    function withdrawFundsFromUnsuccessfulCampaign(uint256 _index)
+        public
+        campaignExists(_index)
+        hasCampaignFailed(_index)
+        hasFundsInCampaign(_index)
+        isAllowedToWithdrawFunds(_index)
+    {
+        Campaign storage campaign = campaigns[_index];
+        campaign.backersAllowances[msg.sender] = false;
+        payable(msg.sender).transfer(campaign.backersAmounts[msg.sender]);
+        emit UnsuccessfulCampaignFundsWithdrawn(
+            _index,
+            msg.sender,
+            campaign.backersAmounts[msg.sender]
+        );
     }
 }
