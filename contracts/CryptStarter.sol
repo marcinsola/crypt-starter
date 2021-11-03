@@ -86,9 +86,7 @@ contract CryptStarter is KeeperCompatibleInterface {
 
     modifier readyToWithdraw(uint256 _index) {
         require(
-            ((block.timestamp >= campaigns[_index].deadline) &&
-                (campaigns[_index].target >= campaigns[_index].totalRaised) &&
-                (campaigns[_index].status == CampaignStatus.Successful)),
+            campaigns[_index].status == CampaignStatus.Successful,
             "Funds are not ready to withdraw yet"
         );
         _;
@@ -97,9 +95,7 @@ contract CryptStarter is KeeperCompatibleInterface {
     //what anout the status?
     modifier hasCampaignFailed(uint256 _index) {
         require(
-            (campaigns[_index].deadline < block.timestamp) &&
-                (campaigns[_index].target > campaigns[_index].totalRaised &&
-                    campaigns[_index].status == CampaignStatus.Unsuccessful),
+            campaigns[_index].status == CampaignStatus.Unsuccessful,
             "Campaign is either still in progress or had reached it goal"
         );
         _;
@@ -128,7 +124,7 @@ contract CryptStarter is KeeperCompatibleInterface {
     function performUpkeep(bytes calldata) external override {
         for (uint8 i = 0; i < currentIndex; i++) {
             Campaign storage campaign = campaigns[i];
-            if (campaign.deadline > block.timestamp) {
+            if (campaign.deadline > block.timestamp || campaign.status != CampaignStatus.InProgress) {
                 continue;
             }
 
@@ -142,7 +138,11 @@ contract CryptStarter is KeeperCompatibleInterface {
         lastKeeperCheck = calculateStartOfDayForTimestamp(block.timestamp);
     }
 
-    function calculateStartOfDayForTimestamp(uint256 _timestamp) internal pure returns (uint256) {
+    function calculateStartOfDayForTimestamp(uint256 _timestamp)
+        internal
+        pure
+        returns (uint256)
+    {
         // ensures that timestamp is always at midnight
         return _timestamp - (_timestamp % 86400);
     }
@@ -218,6 +218,4 @@ contract CryptStarter is KeeperCompatibleInterface {
             campaign.backersAmounts[msg.sender]
         );
     }
-
-    // function markCampaignAsUnsuccessful (with keepers?)
 }
