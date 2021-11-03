@@ -1,7 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-contract CryptStarter {
+import "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
+
+contract CryptStarter is KeeperCompatibleInterface {
     // Enums
     enum CampaignStatus {
         InProgress,
@@ -92,6 +94,7 @@ contract CryptStarter {
         _;
     }
 
+    //what anout the status?
     modifier hasCampaignFailed(uint256 _index) {
         require(
             (campaigns[_index].deadline < block.timestamp) &&
@@ -103,9 +106,46 @@ contract CryptStarter {
     }
     uint256 public currentIndex;
 
+    uint256 public lastKeeperCheck;
+
     mapping(uint256 => Campaign) public campaigns;
 
     mapping(address => uint256) public ownersCampaigns;
+
+    constructor() {
+        lastKeeperCheck = calculateStartOfDayForTimestamp(block.timestamp);
+    }
+
+    function checkUpkeep(bytes calldata)
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory)
+    {
+        upkeepNeeded = (block.timestamp >= lastKeeperCheck + 86400);
+    }
+
+    function performUpkeep(bytes calldata) external override {
+        for (uint8 i = 0; i < currentIndex; i++) {
+            Campaign storage campaign = campaigns[i];
+            if (campaign.deadline > block.timestamp) {
+                continue;
+            }
+
+            if (campaign.totalRaised >= campaign.target) {
+                campaign.status = CampaignStatus.Successful;
+                continue;
+            }
+
+            campaign.status = CampaignStatus.Unsuccessful;
+        }
+        lastKeeperCheck = calculateStartOfDayForTimestamp(block.timestamp);
+    }
+
+    function calculateStartOfDayForTimestamp(uint256 _timestamp) internal pure returns (uint256) {
+        // ensures that timestamp is always at midnight
+        return _timestamp - (_timestamp % 86400);
+    }
 
     function createCampaign(
         string memory _name,
@@ -178,4 +218,6 @@ contract CryptStarter {
             campaign.backersAmounts[msg.sender]
         );
     }
+
+    // function markCampaignAsUnsuccessful (with keepers?)
 }
