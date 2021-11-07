@@ -92,7 +92,6 @@ contract CryptStarter is KeeperCompatibleInterface {
         _;
     }
 
-    //what anout the status?
     modifier hasCampaignFailed(uint256 _index) {
         require(
             campaigns[_index].status == CampaignStatus.Unsuccessful,
@@ -124,7 +123,10 @@ contract CryptStarter is KeeperCompatibleInterface {
     function performUpkeep(bytes calldata) external override {
         for (uint8 i = 0; i < currentIndex; i++) {
             Campaign storage campaign = campaigns[i];
-            if (campaign.deadline > block.timestamp || campaign.status != CampaignStatus.InProgress) {
+            if (
+                campaign.deadline > block.timestamp ||
+                campaign.status != CampaignStatus.InProgress
+            ) {
                 continue;
             }
 
@@ -153,8 +155,8 @@ contract CryptStarter is KeeperCompatibleInterface {
         uint256 _deadline
     ) public {
         require(
-            (block.timestamp + 2592000) < _deadline,
-            "Minimum deadline for a campain is 30 days"
+            (calculateStartOfDayForTimestamp(block.timestamp) + 604800) <= _deadline,
+            "Minimum deadline for a campain is 7 days"
         );
         Campaign storage campaign = campaigns[currentIndex];
         campaign.owner = address(msg.sender);
