@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@chainlink/contracts": "^0.2.2",
-    "moment": "^2.29.1"
+    "chai-bn": "^0.3.0",
+    "moment-timezone": "^0.5.33"
   }
 }
