@@ -32,7 +32,21 @@ describe('CryptStarter', () => {
       .set({ hour: 0, minute: 0, seconds: 0 });
   });
 
-  it.skip('Emits events', async () => {});
+  it.skip('Campaign in progress can be funded', async () => {});
+  it.skip('Campaign cannot be funded if is not in progress', async () => {});
+
+  it.skip('Campaign owner can claim fund from successful campaign', async () => {});
+  it.skip('Campaign owner cannot claim fund from campaign if status is different than in progress', async () => {});
+  it.skip('Only campaign owner can claim funds');
+  it.skip('Cannot claim funds from non-existent campaign');
+  it.skip('CampaignFundsClaimed emitted upon campaign funding');
+
+  it.skip('Backers can withdraw funds from unsuccessful campaign');
+  it.skip('Backers cannot withdraw funds in any other scenario');
+  it.skip('Each backer can withdraw funds only once');
+  it.skip(
+    'UnsuccessfulCampaignFundsWithdrawn emmited upon funds withdrawal by backer'
+  );
 
   it('Shoud fail when deadline is less than 7 days from now', async () => {
     await expect(
