@@ -155,6 +155,16 @@ contract CryptStarter is KeeperCompatibleInterface {
     return _timestamp - (_timestamp % 86400);
   }
 
+  function getCampaignBackers(uint256 _index)
+    public
+    view
+    campaignExists(_index)
+    returns (Backer[] memory)
+  {
+    Campaign storage campaign = campaigns[_index];
+    return campaign.backers;
+  }
+
   function createCampaign(
     string memory _name,
     uint256 _target,
