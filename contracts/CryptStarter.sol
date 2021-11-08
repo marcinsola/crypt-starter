@@ -13,6 +13,11 @@ contract CryptStarter is KeeperCompatibleInterface {
     }
 
     // Structs
+    struct Backer {
+        address backerAddress;
+        uint256 amount;
+    }
+
     struct Campaign {
         address owner;
         string name;
@@ -22,6 +27,7 @@ contract CryptStarter is KeeperCompatibleInterface {
         CampaignStatus status;
         mapping(address => uint256) backersAmounts;
         mapping(address => bool) backersAllowances;
+        Backer[] backers;
     }
 
     // Events
@@ -184,7 +190,9 @@ contract CryptStarter is KeeperCompatibleInterface {
         campaignExists(_index)
         campaignInProgress(_index)
     {
+        Backer backer = Backer(msg.sender, msg.value);
         Campaign storage campaign = campaigns[_index];
+        campaign.backers.push(backer);
         campaign.backersAmounts[msg.sender] += msg.value;
         campaign.backersAllowances[msg.sender] = true;
         campaign.totalRaised = msg.value;
