@@ -241,4 +241,13 @@ contract CryptStarter is KeeperCompatibleInterface {
       campaign.backersAmounts[msg.sender]
     );
   }
+
+  function getBackerAmountInCampaign(address _backer, uint256 _index)
+    public
+    view
+    campaignExists(_index)
+    returns (uint256)
+  {
+    return campaigns[_index].backersAmounts[_backer];
+  }
 }
