@@ -32,9 +32,7 @@ describe('CryptStarter', () => {
       .set({ hour: 0, minute: 0, seconds: 0 });
   });
 
-  it.skip('Campaign in progress can be funded', async () => {});
   it.skip('Campaign cannot be funded if is not in progress', async () => {});
-
   it.skip('Campaign owner can claim fund from successful campaign', async () => {});
   it.skip('Campaign owner cannot claim fund from campaign if status is different than in progress', async () => {});
   it.skip('Only campaign owner can claim funds');
@@ -66,32 +64,23 @@ describe('CryptStarter', () => {
     );
 
     let receipt = await transaction.wait();
-    const campaignCreatedEvent = receipt.events[0];
-    console.log(campaignCreatedEvent);
+    const [campaignCreatedEvent] = receipt.events;
 
     expect(campaignCreatedEvent.event).to.equal('CampaignCreated');
-    expect(campaignCreatedEvent.args['name']).to.equal(campaignName);
     expect(campaignCreatedEvent.args['owner']).to.equal(signerAddress);
+    expect(campaignCreatedEvent.args['name']).to.equal(campaignName);
 
     expect(
-      ethers.BigNumber.from(campaignCreatedEvent.args['index']._hex).toString()
-    ).to.be.a.bignumber.that.is.equal(
-      ethers.BigNumber.from(currentIndex).toString()
-    );
+      ethers.BigNumber.from(campaignCreatedEvent.args['index']._hex)
+    ).to.equal(currentIndex);
 
     expect(
-      ethers.BigNumber.from(campaignCreatedEvent.args['target']._hex).toString()
-    ).to.be.a.bignumber.that.is.equal(campaignTarget);
+      ethers.BigNumber.from(campaignCreatedEvent.args['target']._hex)
+    ).to.equal(campaignTarget);
 
     expect(
-      ethers.BigNumber.from(campaignCreatedEvent.args['target']._hex).toString()
-    ).to.be.a.bignumber.that.is.equal(campaignTarget);
-
-    expect(
-      ethers.BigNumber.from(
-        campaignCreatedEvent.args['deadline']._hex
-      ).toString()
-    ).to.be.a.bignumber.that.is.equal(weekFromNow.unix().toString());
+      ethers.BigNumber.from(campaignCreatedEvent.args['deadline']._hex)
+    ).to.equal(weekFromNow.unix());
   });
 
   it('Creates campaign successfully', async () => {
@@ -108,24 +97,59 @@ describe('CryptStarter', () => {
     expect(campaign['owner']).to.equal(signerAddress);
     expect(campaign['name']).to.equal(campaignName);
 
-    expect(
-      ethers.BigNumber.from(campaign['target']._hex).toString()
-    ).to.be.a.bignumber.that.is.equal(campaignTarget);
+    expect(ethers.BigNumber.from(campaign['target']._hex)).to.equal(
+      campaignTarget
+    );
 
-    expect(
-      ethers.BigNumber.from(campaign['deadline']._hex).toString()
-    ).to.be.a.bignumber.that.is.equal(weekFromNow.unix().toString());
+    expect(ethers.BigNumber.from(campaign['deadline']._hex)).to.equal(
+      weekFromNow.unix()
+    );
 
-    expect(
-      ethers.BigNumber.from(campaign['totalRaised']._hex).toString()
-    ).to.be.a.bignumber.that.is.equal('0');
+    expect(ethers.BigNumber.from(campaign['totalRaised']._hex)).to.equal(0);
 
     expect(campaign['status']).to.equal(0);
 
-    expect(
-      ethers.BigNumber.from(newNumberOfCampaigns._hex).toString()
-    ).to.be.a.bignumber.that.is.equal(
-      ethers.BigNumber.from(currentNumberOfCampaigns).add(1).toString()
+    expect(ethers.BigNumber.from(newNumberOfCampaigns._hex)).to.equal(
+      ethers.BigNumber.from(currentNumberOfCampaigns).add(1)
     );
+  });
+
+  it('Campaign in progress can be funded', async () => {
+    const [owner, backer] = await ethers.getSigners();
+    await cryptStarter.createCampaign(
+      campaignName,
+      campaignTarget,
+      weekFromNow.unix()
+    );
+    const amount = ethers.utils.parseEther('0.1');
+
+    await cryptStarter.connect(backer).fundCampaign(currentIndex, {
+      value: amount,
+    });
+
+    const campaign = await cryptStarter.campaigns(currentIndex);
+    const backers = await cryptStarter.getCampaignBackers(currentIndex);
+    const backerAmount = await cryptStarter.getBackerAmountInCampaign(
+      backer.address,
+      currentIndex
+    );
+    expect(ethers.BigNumber.from(campaign.totalRaised._hex)).to.equal(amount);
+    expect(backerAmount).to.equal(amount);
+    expect(backers.length).to.equal(1);
+  });
+
+  it.skip('backersAmounts is calculated correctly');
+  it('Campaign cannot be backed by the owner', async () => {
+    await cryptStarter.createCampaign(
+      campaignName,
+      campaignTarget,
+      weekFromNow.unix()
+    );
+
+    await expect(
+      cryptStarter.fundCampaign(currentIndex, {
+        value: ethers.utils.parseEther('0.1'),
+      })
+    ).to.be.revertedWith('You cannot fund your own campaign');
   });
 });
