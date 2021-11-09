@@ -74,6 +74,14 @@ contract CryptStarter is KeeperCompatibleInterface {
     _;
   }
 
+  modifier canFundCampaign(uint256 _index) {
+    require(
+      campaigns[_index].owner != msg.sender,
+      'You cannot fund your own campaign'
+    );
+    _;
+  }
+
   modifier hasFundsInCampaign(uint256 _index) {
     require(
       campaigns[_index].backersAmounts[msg.sender] > 0,
@@ -193,8 +201,9 @@ contract CryptStarter is KeeperCompatibleInterface {
     payable
     campaignExists(_index)
     campaignInProgress(_index)
+    canFundCampaign(_index)
   {
-    Backer backer = Backer(msg.sender, msg.value);
+    Backer memory backer = Backer(msg.sender, msg.value);
     Campaign storage campaign = campaigns[_index];
     campaign.backers.push(backer);
     campaign.backersAmounts[msg.sender] += msg.value;
