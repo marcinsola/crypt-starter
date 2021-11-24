@@ -25,7 +25,6 @@ describe('CryptStarter', () => {
   });
 
   beforeEach(async () => {
-    currentIndex = await cryptStarter.currentIndex();
     weekFromNow = moment()
       .tz('UTC')
       .add(7, 'days')
@@ -46,7 +45,7 @@ describe('CryptStarter', () => {
     'UnsuccessfulCampaignFundsWithdrawn emmited upon funds withdrawal by backer'
   );
 
-  it('Shoud fail when deadline is less than 7 days from now', async () => {
+  it.skip('Shoud fail when deadline is less than 7 days from now', async () => {
     await expect(
       cryptStarter.createCampaign(
         campaignName,
@@ -62,8 +61,8 @@ describe('CryptStarter', () => {
       campaignTarget,
       weekFromNow.unix()
     );
-
     let receipt = await transaction.wait();
+    const campaign = await cryptStarter.campaigns(0);
     const [campaignCreatedEvent] = receipt.events;
 
     expect(campaignCreatedEvent.event).to.equal('CampaignCreated');
@@ -72,7 +71,7 @@ describe('CryptStarter', () => {
 
     expect(
       ethers.BigNumber.from(campaignCreatedEvent.args['index']._hex)
-    ).to.equal(currentIndex);
+    ).to.equal(0);
 
     expect(
       ethers.BigNumber.from(campaignCreatedEvent.args['target']._hex)
@@ -84,7 +83,7 @@ describe('CryptStarter', () => {
   });
 
   it('Creates campaign successfully', async () => {
-    const currentNumberOfCampaigns = currentIndex;
+    const currentNumberOfCampaigns = await cryptStarter.getNumberOfCampaigns();
     await cryptStarter.createCampaign(
       campaignName,
       campaignTarget,
@@ -92,7 +91,7 @@ describe('CryptStarter', () => {
     );
 
     let campaign = await cryptStarter.campaigns(0);
-    const newNumberOfCampaigns = await cryptStarter.currentIndex();
+    const newNumberOfCampaigns = await cryptStarter.getNumberOfCampaigns();
 
     expect(campaign['owner']).to.equal(signerAddress);
     expect(campaign['name']).to.equal(campaignName);
@@ -121,6 +120,9 @@ describe('CryptStarter', () => {
       campaignTarget,
       weekFromNow.unix()
     );
+
+    const numberOfCampaigns = await cryptStarter.getNumberOfCampaigns();
+    currentIndex = numberOfCampaigns - 1;
     const amount = ethers.utils.parseEther('0.1');
 
     await cryptStarter.connect(backer).fundCampaign(currentIndex, {
@@ -128,14 +130,17 @@ describe('CryptStarter', () => {
     });
 
     const campaign = await cryptStarter.campaigns(currentIndex);
-    const backers = await cryptStarter.getCampaignBackers(currentIndex);
-    const backerAmount = await cryptStarter.getBackerAmountInCampaign(
-      backer.address,
-      currentIndex
+    const donation = await cryptStarter.campaignDonations(currentIndex, 0);
+    const backerAmount = await cryptStarter.campaignDonationsByBackerAddress(
+      currentIndex,
+      backer.address
     );
+
     expect(ethers.BigNumber.from(campaign.totalRaised._hex)).to.equal(amount);
-    expect(backerAmount).to.equal(amount);
-    expect(backers.length).to.equal(1);
+    expect(ethers.BigNumber.from(backerAmount._hex)).to.equal(amount);
+    expect(campaign.totalDonations).to.equal(1);
+    expect(donation.backerAddress).to.equal(backer.address);
+    expect(donation.amount).to.equal(amount);
   });
 
   it.skip('backersAmounts is calculated correctly');

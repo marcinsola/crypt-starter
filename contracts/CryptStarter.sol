@@ -19,16 +19,17 @@ contract CryptStarter is KeeperCompatibleInterface {
     }
 
     struct Campaign {
+        uint256 index;
         address owner;
         string name;
         uint256 target;
         uint256 deadline;
         uint256 totalRaised;
+        uint256 totalDonations;
         CampaignStatus status;
     }
 
     mapping(uint256 => Donation[]) public campaignDonations;
-    mapping(uint256 => uint256) public campaignTotalRaised;
 
     //can be private???
     mapping(uint256 => mapping(address => uint256))
@@ -56,7 +57,7 @@ contract CryptStarter is KeeperCompatibleInterface {
     // Modifiers
     modifier campaignExists(uint256 _index) {
         require(
-            campaigns.length >= _index - 1,
+            int256(campaigns.length) >= int256(_index) - 1,
             "Campaign with the given index wasn't registered"
         );
         _;
@@ -185,10 +186,12 @@ contract CryptStarter is KeeperCompatibleInterface {
         );
         campaigns.push(
             Campaign(
+                campaigns.length,
                 msg.sender,
                 _name,
                 _target,
                 _deadline,
+                0,
                 0,
                 CampaignStatus.InProgress
             )
@@ -212,9 +215,10 @@ contract CryptStarter is KeeperCompatibleInterface {
         campaignInProgress(_index)
         canFundCampaign(_index)
     {
-        Donation memory donation = Donation(msg.sender, msg.value);
-        campaignDonations[_index].push(donation);
-        campaignTotalRaised[_index] = msg.value;
+        Campaign storage campaign = campaigns[_index];
+        campaignDonations[_index].push(Donation(msg.sender, msg.value));
+        campaign.totalRaised = msg.value;
+        campaign.totalDonations++;
         campaignDonationsByBackerAddress[_index][msg.sender] += msg.value;
 
         emit CampaignFunded(_index, msg.sender, msg.value);
@@ -251,12 +255,7 @@ contract CryptStarter is KeeperCompatibleInterface {
         );
     }
 
-    // function getDonationAmountInCampaign(address _backer, uint256 _index)
-    //     public
-    //     view
-    //     campaignExists(_index)
-    //     returns (uint256)
-    // {
-    //     return campaigns[_index].backersAmounts[_backer];
-    // }
+    function getNumberOfCampaigns() public view returns (uint256) {
+        return campaigns.length;
+    }
 }
