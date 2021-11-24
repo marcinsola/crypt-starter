@@ -15,7 +15,7 @@ describe('CryptStarter', () => {
     signerAddress;
 
   before(async () => {
-    const CryptStarter = await ethers.getContractFactory('CryptStarter');
+    const CryptStarter = await ethers.getContractFactory('TestCryptStarter');
     cryptStarter = await CryptStarter.deploy();
     await cryptStarter.deployed();
     campaignName = 'TestCampaign';
@@ -213,13 +213,59 @@ describe('CryptStarter', () => {
     ).to.be.revertedWith('Funds are not ready to withdraw yet');
   });
 
+  it('Campaign cannot be funded if is not in progress', async () => {
+    await cryptStarter.createCampaign(
+      campaignName,
+      campaignTarget,
+      weekFromNow.unix()
+    );
+
+    const [owner, backer1, backer2] = await ethers.getSigners();
+    const numberOfCampaigns = await cryptStarter.getNumberOfCampaigns();
+    const index = numberOfCampaigns - 1;
+
+    const amount = ethers.utils.parseEther('0.1');
+    await cryptStarter.setCampaignStatus(index, 1);
+    await expect(
+      cryptStarter.connect(backer1).fundCampaign(index, { value: amount })
+    ).to.be.revertedWith('Campaign is not in progress');
+    await expect(
+      cryptStarter.connect(backer2).fundCampaign(index, { value: amount })
+    ).to.be.revertedWith('Campaign is not in progress');
+  });
+
+  it('UnsuccessfulCampaignFundsWithdrawn emmited upon funds withdrawal by backer', async () => {
+    await cryptStarter.createCampaign(
+      campaignName,
+      campaignTarget,
+      weekFromNow.unix()
+    );
+
+    const [owner, backer] = await ethers.getSigners();
+    const numberOfCampaigns = await cryptStarter.getNumberOfCampaigns();
+    const index = numberOfCampaigns - 1;
+
+    const amount = ethers.utils.parseEther('0.1');
+    await cryptStarter.connect(backer).fundCampaign(index, { value: amount });
+    await cryptStarter.setCampaignStatus(index, 2);
+    const tx = await cryptStarter
+      .connect(backer)
+      .withdrawFundsFromUnsuccessfulCampaign(index);
+
+    const receipt = await tx.wait();
+    const [event] = receipt.events;
+
+    expect(event.event).to.equal('UnsuccessfulCampaignFundsWithdrawn');
+    expect(event.args['index']).to.equal(index);
+    expect(event.args['backer']).to.equal(backer.address);
+    expect(ethers.BigNumber.from(event.args['amount']._hex)).to.equal(amount);
+  });
+
   it.skip('CampaignFundsClaimed emitted upon campaign claiming');
-  it.skip('Campaign cannot be funded if is not in progress', async () => {});
   it.skip('Campaign owner can claim fund from successful campaign', async () => {});
   it.skip('Backers can withdraw funds from unsuccessful campaign');
   it.skip('Each backer can withdraw funds only once');
   it.skip(
-    'UnsuccessfulCampaignFundsWithdrawn emmited upon funds withdrawal by backer'
+    'Test scenario when backer tries to withdraw without funding anything'
   );
-
 });
