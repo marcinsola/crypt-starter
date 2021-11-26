@@ -16,6 +16,7 @@ contract CryptStarter is KeeperCompatibleInterface {
     struct Donation {
         address backerAddress;
         uint256 amount;
+        uint256 timestamp;
     }
 
     struct Campaign {
@@ -31,7 +32,6 @@ contract CryptStarter is KeeperCompatibleInterface {
 
     mapping(uint256 => Donation[]) public campaignDonations;
 
-    //can be private???
     mapping(uint256 => mapping(address => uint256))
         public campaignDonationsByBackerAddress;
 
@@ -216,7 +216,9 @@ contract CryptStarter is KeeperCompatibleInterface {
         canFundCampaign(_index)
     {
         Campaign storage campaign = campaigns[_index];
-        campaignDonations[_index].push(Donation(msg.sender, msg.value));
+        campaignDonations[_index].push(
+            Donation(msg.sender, msg.value, block.timestamp)
+        );
         campaign.totalRaised = msg.value;
         campaign.totalDonations++;
         campaignDonationsByBackerAddress[_index][msg.sender] += msg.value;
