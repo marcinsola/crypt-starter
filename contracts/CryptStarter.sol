@@ -112,6 +112,11 @@ contract CryptStarter is KeeperCompatibleInterface {
         _;
     }
 
+    modifier nonEmptyDonation() {
+        require(msg.value > 0, "Cannot donate with no value");
+        _;
+    }
+
     uint256 public lastKeeperCheck;
 
     Campaign[] public campaigns;
@@ -216,6 +221,7 @@ contract CryptStarter is KeeperCompatibleInterface {
         campaignExists(_index)
         campaignInProgress(_index)
         canFundCampaign(_index)
+        nonEmptyDonation
     {
         Campaign storage campaign = campaigns[_index];
         campaignDonations[_index].push(
