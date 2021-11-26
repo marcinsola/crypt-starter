@@ -28,6 +28,7 @@ contract CryptStarter is KeeperCompatibleInterface {
         uint256 totalRaised;
         uint256 totalDonations;
         CampaignStatus status;
+        uint256 timestamp;
     }
 
     mapping(uint256 => Donation[]) public campaignDonations;
@@ -193,7 +194,8 @@ contract CryptStarter is KeeperCompatibleInterface {
                 _deadline,
                 0,
                 0,
-                CampaignStatus.InProgress
+                CampaignStatus.InProgress,
+                block.timestamp
             )
         );
 
