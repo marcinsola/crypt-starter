@@ -227,7 +227,7 @@ contract CryptStarter is KeeperCompatibleInterface {
         campaignDonations[_index].push(
             Donation(msg.sender, msg.value, block.timestamp)
         );
-        campaign.totalRaised = msg.value;
+        campaign.totalRaised += msg.value;
         campaign.totalDonations++;
         campaignDonationsByBackerAddress[_index][msg.sender] += msg.value;
 
