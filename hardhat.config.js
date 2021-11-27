@@ -23,9 +23,17 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
  */
 module.exports = {
   solidity: '0.8.9',
+  defaultNetwork: 'hardhat',
   networks: {
-    ropsten: {
-      url: process.env.ROPSTEN_URL || '',
+    hardhat: {},
+    localhost: {},
+    kovan: {
+      url: process.env.KOVAN_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    rinkeby: {
+      url: process.env.RINKEBY_URL || '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
